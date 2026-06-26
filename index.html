@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobertura de Estoque — Semina</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,Arial,sans-serif;background:#f4f4f8;font-size:12px;color:#222;}
+.hdr{background:#3A2060;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;}
+.hdr-brand{font-size:18px;font-weight:700;}
+.hdr-accent{width:3px;height:28px;background:#DC1080;border-radius:2px;}
+.hdr-title{font-size:14px;font-weight:600;}
+.hdr-right{margin-left:auto;text-align:right;}
+.hdr-sub{font-size:11px;color:#C8B8E8;}
+.hdr-upd{font-size:10px;color:#9B85C8;margin-top:2px;}
+.cards{display:flex;gap:10px;padding:10px 20px 6px;}
+.card{flex:1;border-radius:8px;padding:10px 14px;border:1px solid;}
+.card-lbl{font-size:10px;font-weight:600;}
+.card-num{font-size:22px;font-weight:700;line-height:1.1;}
+.card-sub{font-size:10px;margin-top:1px;}
+.cr{background:#FCEBEB;border-color:#F7C1C1;}.cr .card-lbl,.cr .card-sub{color:#791F1F;}.cr .card-num{color:#A32D2D;}
+.co{background:#FAEEDA;border-color:#FAC775;}.co .card-lbl,.co .card-sub{color:#633806;}.co .card-num{color:#854F0B;}
+.cp{background:#EEEDFE;border-color:#CECBF6;}.cp .card-lbl,.cp .card-sub{color:#26215C;}.cp .card-num{color:#3C3489;}
+.cg{background:#F3F4F6;border-color:#E5E7EB;}.cg .card-lbl,.cg .card-sub{color:#4B5563;}.cg .card-num{color:#1F2937;}
+.toggle-bar{display:flex;align-items:center;gap:12px;padding:8px 20px;background:#fff;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;flex-wrap:wrap;}
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle-lbl{font-size:11px;color:#374151;font-weight:600;}
+.toggle{position:relative;width:40px;height:22px;}
+.toggle input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:#D1D5DB;border-radius:22px;transition:.3s;}
+.slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.slider{background:#7C3AED;}
+input:checked+.slider:before{transform:translateX(18px);}
+.toggle-hint{font-size:10px;color:#6B7280;}
+.toggle-hint.on{color:#7C3AED;font-weight:600;}
+.sexta-badge{margin-left:auto;background:#EDE8F8;color:#3C3489;border:1px solid #CECBF6;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;}
+.filter-bar{display:flex;gap:8px;align-items:center;padding:8px 20px;background:#f9f9fb;border-bottom:1px solid #E5E7EB;flex-wrap:wrap;}
+.filter-label{font-size:10px;color:#6B7280;white-space:nowrap;}
+.search-wrap{position:relative;flex:1;min-width:180px;}
+.search-wrap input{width:100%;padding:6px 10px 6px 28px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;outline:none;font-family:inherit;}
+.search-wrap input:focus{border-color:#7C3AED;}
+.sico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9CA3AF;font-size:12px;}
+.fsel{padding:6px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;outline:none;cursor:pointer;color:#374151;min-width:130px;font-family:inherit;}
+.fsel:focus{border-color:#7C3AED;}
+.btn-cl{padding:5px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;cursor:pointer;color:#6B7280;font-family:inherit;}
+.btn-cl:hover{background:#F3F4F6;}
+.rinfo{font-size:10px;color:#6B7280;padding:3px 20px 0;}
+.rinfo strong{color:#3C3489;}
+.tw{padding:4px 20px 20px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+thead tr{background:#3A2060;color:#fff;}
+thead th{padding:7px 8px;text-align:left;font-size:10px;font-weight:600;white-space:nowrap;}
+thead th.r{text-align:right;}
+thead th.esp{background:#2D1A50;color:#C4B5FD;}
+thead th.esg{background:#1A3A2A;color:#6EE7B7;}
+tbody tr:nth-child(even){background:#FAFAFA;}
+tbody tr:hover{background:#EEEDFE;}
+tbody td{padding:5px 8px;vertical-align:middle;border-bottom:1px solid #F0EDF8;white-space:nowrap;}
+tbody td.r{text-align:right;font-variant-numeric:tabular-nums;}
+tbody td.desc{white-space:normal;max-width:220px;}
+tbody td.cod{font-size:10px;color:#6B7280;font-family:monospace;}
+.fp{color:#3B6D11;font-size:10px;font-weight:600;}
+.ft{color:#185FA5;font-size:10px;font-weight:600;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;}
+.bsb{background:#FCEBEB;color:#A32D2D;}
+.bsi{background:#FAEEDA;color:#854F0B;}
+.bsa{background:#EEEDFE;color:#3C3489;}
+.ccb{color:#A32D2D;font-weight:700;}
+.cci{color:#854F0B;font-weight:700;}
+.cca{color:#3C3489;font-weight:700;}
+.sec td{background:#F3F0FA;font-size:9px;font-weight:700;color:#3C3489;letter-spacing:.4px;text-transform:uppercase;padding:4px 8px;border-top:2px solid #CECBF6;}
+.ent-sp{color:#7C3AED;font-weight:700;}
+.ent-es{color:#059669;font-weight:700;}
+.tot-c{color:#7C3AED;font-weight:700;}
+mark{background:#FEF9C3;border-radius:2px;padding:0 1px;}
+.empty{text-align:center;padding:40px;color:#9CA3AF;font-size:13px;}
+.error-box{margin:20px;padding:16px 20px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;color:#991B1B;font-size:13px;line-height:1.6;}
+.error-box code{background:#FEE2E2;padding:2px 6px;border-radius:4px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">SEMINA</div>
+  <div class="hdr-accent"></div>
+  <div class="hdr-title">Cobertura de Estoque — Todos os Produtos</div>
+  <div class="hdr-right">
+    <div class="hdr-sub">Estoque atual vs Forecast</div>
+    <div class="hdr-upd" id="last-updated"></div>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card cr"><div class="card-lbl">SKUs críticos</div><div class="card-num" id="cnt-baixa">—</div><div class="card-sub">&lt; 2 meses</div></div>
+  <div class="card co"><div class="card-lbl">SKUs em atenção</div><div class="card-num" id="cnt-ideal">—</div><div class="card-sub">2–4 meses</div></div>
+  <div class="card cp"><div class="card-lbl">SKUs em excesso</div><div class="card-num" id="cnt-alta">—</div><div class="card-sub">&gt; 4 meses</div></div>
+  <div class="card cg"><div class="card-lbl">Exibindo</div><div class="card-num" id="cnt-total">—</div><div class="card-sub" id="cnt-sub">monitorados</div></div>
+</div>
+
+<div class="toggle-bar">
+  <div class="toggle-wrap">
+    <label class="toggle">
+      <input type="checkbox" id="toggleEntrada" onchange="applyFilters()">
+      <span class="slider"></span>
+    </label>
+    <span class="toggle-lbl">Considerar entrada prevista</span>
+  </div>
+  <span class="toggle-hint" id="toggleHint">Exibindo apenas estoque atual</span>
+  <div class="sexta-badge" id="sextaBadge"></div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Filtrar:</span>
+  <div class="search-wrap">
+    <span class="sico">&#128269;</span>
+    <input type="text" id="q" placeholder="Pesquisar código, SKU, descrição..." oninput="applyFilters()">
+  </div>
+  <select class="fsel" id="fFab" onchange="applyFilters()">
+    <option value="">Fabricação — todas</option>
+    <option value="Própria">Própria</option>
+    <option value="Terceiros">Terceiros</option>
+  </select>
+  <select class="fsel" id="fSt" onchange="applyFilters()">
+    <option value="">Status — todos</option>
+    <option value="baixa">Baixa Cobertura</option>
+    <option value="ideal">Cobertura Ideal</option>
+    <option value="alta">Alta Cobertura</option>
+  </select>
+  <button class="btn-cl" onclick="clearFilters()">✕ Limpar</button>
+</div>
+
+<div class="rinfo" id="info"></div>
+<div id="content"><div style="padding:40px 20px;color:#9CA3AF;">Carregando dados...</div></div>
+
+<script>
+function getFab(cod) {
+  const c = (cod||'').trim();
+  if (c === '0000-028') return 'Terceiros';
+  if (c.startsWith('0072')) return 'Própria';
+  return 'Terceiros';
+}
+
+function proxSexta() {
+  const d = new Date();
+  const diff = (5 - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  return d.toLocaleDateString('pt-BR');
+}
+document.getElementById('sextaBadge').textContent = '📦 Próxima sexta: ' + proxSexta();
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  function splitLine(line) {
+    const cols=[]; let cur='', inQ=false;
+    for (let i=0; i<line.length; i++) {
+      const ch=line[i];
+      if (ch==='"'){inQ=!inQ;continue;}
+      if (ch===','&&!inQ){cols.push(cur);cur='';continue;}
+      cur+=ch;
+    }
+    cols.push(cur);
+    return cols.map(c=>c.trim());
+  }
+  const headers = splitLine(lines[0]);
+  const iCod   = headers.findIndex(h=>/^cod/i.test(h));
+  const iDesc  = headers.findIndex(h=>/descri/i.test(h));
+  const iSP    = headers.findIndex(h=>h.trim().toUpperCase()==='SP');
+  const iEntSP = headers.findIndex(h=>/proxima.*entrada.*sp|entrada.*sp/i.test(h));
+  const iES    = headers.findIndex(h=>/vix|^es$|vix es/i.test(h.trim()));
+  const iEntES = headers.findIndex(h=>/proxima.*entrada.*es|entrada.*es/i.test(h));
+  const iTotal = headers.findIndex(h=>h.trim().toLowerCase()==='total');
+  const iFc    = headers.findIndex(h=>/forecast/i.test(h));
+
+  const rows=[];
+  for (let i=1; i<lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const c = splitLine(lines[i]);
+    const total = c[iTotal]||'';
+    if (total==='#N/A'||total==='') continue;
+    if (!c[iDesc]||!c[iDesc].trim()) continue;
+    rows.push({
+      cod:   c[iCod]||'',
+      desc:  (c[iDesc]||'').trim(),
+      sp:    c[iSP]||'',
+      entSP: c[iEntSP]||'',
+      es:    c[iES]||'',
+      entES: c[iEntES]||'',
+      total, fc: c[iFc]||''
+    });
+  }
+  return rows;
+}
+
+function toNum(v) {
+  if (!v||v==='#N/A'||v.trim()==='') return null;
+  const n = parseFloat(v.replace(/\./g,'').replace(',','.'));
+  return isNaN(n)?null:n;
+}
+
+function calcCob(est,fc){
+  if (fc===null||fc<=0||est===null) return null;
+  return est/fc;
+}
+function getSt(m){
+  if (m===null) return 'alta';
+  if (m<2) return 'baixa';
+  if (m<=4) return 'ideal';
+  return 'alta';
+}
+function fmtCob(m){return m===null?'— m':m.toFixed(1).replace('.',',')+' m';}
+function fmtNum(n){return n===null?'—':Math.round(n).toLocaleString('pt-BR');}
+function slbl(s){return s==='baixa'?'Baixa Cob.':s==='ideal'?'Cob. Ideal':'Alta Cob.';}
+function hl(t,q){
+  if(!q)return t;
+  return t.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
+}
+
+let state=[];
+
+function applyFilters(){
+  const q      = document.getElementById('q').value.trim().toLowerCase();
+  const fFab   = document.getElementById('fFab').value;
+  const fSt    = document.getElementById('fSt').value;
+  const comEnt = document.getElementById('toggleEntrada').checked;
+
+  const hint = document.getElementById('toggleHint');
+  hint.textContent = comEnt
+    ? '✅ Estoque atual + entradas previstas na sexta'
+    : 'Exibindo apenas estoque atual';
+  hint.className = 'toggle-hint'+(comEnt?' on':'');
+
+  const sOrder={baixa:0,ideal:1,alta:2};
+
+  const rows = state.map(r=>{
+    const spEf  = (r.sp||0)  + (comEnt?(r.entSP||0):0);
+    const esEf  = (r.es||0)  + (comEnt?(r.entES||0):0);
+    const totEf = spEf + esEf;
+    const fc    = r.fc;
+    const m     = calcCob(totEf, fc);
+    const st    = getSt(m);
+    return {...r, spEf, esEf, totEf, mCalc:m, stCalc:st};
+  }).filter(r=>{
+    if (fFab && r.fab!==fFab) return false;
+    if (fSt  && r.stCalc!==fSt) return false;
+    if (q){
+      const hay=(r.cod+' '+r.desc+' '+r.fab).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if (q){
+    rows.sort((a,b)=>{
+      const aT=(a.cod.toLowerCase().startsWith(q)||a.desc.toLowerCase().startsWith(q))?0:1;
+      const bT=(b.cod.toLowerCase().startsWith(q)||b.desc.toLowerCase().startsWith(q))?0:1;
+      if (aT!==bT) return aT-bT;
+      return sOrder[a.stCalc]-sOrder[b.stCalc]||(a.mCalc||999)-(b.mCalc||999);
+    });
+  } else {
+    rows.sort((a,b)=>sOrder[a.stCalc]-sOrder[b.stCalc]||(a.mCalc===null?1:b.mCalc===null?-1:a.mCalc-b.mCalc));
+  }
+
+  document.getElementById('cnt-baixa').textContent = rows.filter(r=>r.stCalc==='baixa').length;
+  document.getElementById('cnt-ideal').textContent = rows.filter(r=>r.stCalc==='ideal').length;
+  document.getElementById('cnt-alta').textContent  = rows.filter(r=>r.stCalc==='alta').length;
+  document.getElementById('cnt-total').textContent = rows.length;
+  document.getElementById('cnt-sub').textContent   = rows.length<state.length?'de '+state.length+' SKUs':'monitorados';
+
+  const info=document.getElementById('info');
+  info.innerHTML=rows.length<state.length
+    ?'<strong>'+rows.length+'</strong> de '+state.length+' SKUs exibidos':'';
+
+  if (rows.length===0){
+    document.getElementById('content').innerHTML='<div class="empty">Nenhum SKU encontrado para os filtros aplicados.</div>';
+    return;
+  }
+
+  const sLbl={
+    baixa:'🔴 Baixa cobertura — menos de 2 meses',
+    ideal:'🟡 Cobertura ideal — 2 a 4 meses',
+    alta :'🟣 Alta cobertura — acima de 4 meses'
+  };
+  const showSec=!q;
+  let lastSt=null;
+
+  const sexta = proxSexta();
+
+  // Cabeçalho dinâmico
+  const thEntSP = comEnt?`<th class="r esp">Ent. SP<br><span style="font-weight:400;font-size:9px;">${sexta}</span></th>`:'';
+  const thEntES = comEnt?`<th class="r esg">Ent. ES<br><span style="font-weight:400;font-size:9px;">${sexta}</span></th>`:'';
+  const thTotC  = comEnt?`<th class="r" style="background:#2D1A50;color:#C4B5FD;">Total c/ Ent.</th>`:'';
+  const nCols   = comEnt?12:9;
+
+  let html=`<div class="tw"><table><thead><tr>
+    <th>Fab.</th><th>Código</th><th>Descrição (SKU)</th>
+    <th class="r">Est. SP</th>
+    ${thEntSP}
+    <th class="r">Est. ES</th>
+    ${thEntES}
+    <th class="r">Total</th>
+    ${thTotC}
+    <th class="r">Forecast</th>
+    <th class="r">Cob.</th><th>Status</th>
+  </tr></thead><tbody>`;
+
+  rows.forEach(r=>{
+    if (showSec&&r.stCalc!==lastSt){
+      html+=`<tr class="sec"><td colspan="${nCols}">${sLbl[r.stCalc]}</td></tr>`;
+      lastSt=r.stCalc;
+    }
+    const fc    = r.fab==='Própria'?'fp':'ft';
+    const cCob  = r.stCalc==='baixa'?'ccb':r.stCalc==='ideal'?'cci':'cca';
+    const sBdg  = r.stCalc==='baixa'?'bsb':r.stCalc==='ideal'?'bsi':'bsa';
+    const idx   = state.indexOf(r);
+
+    const tdEntSP = comEnt?`<td class="r ent-sp">${r.entSP>0?fmtNum(r.entSP):'—'}</td>`:'';
+    const tdEntES = comEnt?`<td class="r ent-es">${r.entES>0?fmtNum(r.entES):'—'}</td>`:'';
+    const tdTotC  = comEnt?`<td class="r tot-c">${fmtNum(r.totEf)}</td>`:'';
+
+    html+=`<tr>
+      <td><span class="${fc}">${r.fab}</span></td>
+      <td class="cod">${hl(r.cod,q)}</td>
+      <td class="desc">${hl(r.desc,q)}</td>
+      <td class="r">${fmtNum(r.sp)}</td>
+      ${tdEntSP}
+      <td class="r">${fmtNum(r.es)}</td>
+      ${tdEntES}
+      <td class="r" style="font-weight:700">${fmtNum(r.sp+r.es)}</td>
+      ${tdTotC}
+      <td class="r">${fmtNum(r.fc)}</td>
+      <td class="r ${cCob}">${fmtCob(r.mCalc)}</td>
+      <td><span class="badge ${sBdg}">${slbl(r.stCalc)}</span></td>
+    </tr>`;
+  });
+
+  html+='</tbody></table></div>';
+  document.getElementById('content').innerHTML=html;
+}
+
+function clearFilters(){
+  document.getElementById('q').value='';
+  document.getElementById('fFab').value='';
+  document.getElementById('fSt').value='';
+  applyFilters();
+}
+
+fetch('estoque.csv?v='+Date.now(),{cache:'no-store'})
+  .then(r=>{
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    return r.text();
+  })
+  .then(text=>{
+    const rows=parseCSV(text);
+    if (rows.length===0) throw new Error('CSV vazio ou sem dados reconhecíveis');
+    state=rows.map(r=>({
+      cod:   r.cod,
+      fab:   getFab(r.cod),
+      desc:  r.desc,
+      sp:    toNum(r.sp)||0,
+      entSP: toNum(r.entSP)||0,
+      es:    toNum(r.es)||0,
+      entES: toNum(r.entES)||0,
+      fc:    toNum(r.fc),
+    }));
+    document.getElementById('last-updated').textContent=
+      'Atualizado em '+new Date().toLocaleString('pt-BR');
+    applyFilters();
+  })
+  .catch(err=>{
+    document.getElementById('content').innerHTML=`
+      <div class="error-box">
+        <strong>Não foi possível carregar o arquivo de dados.</strong><br><br>
+        Verifique se <code>estoque.csv</code> está na mesma pasta que <code>index.html</code> no repositório.<br><br>
+        Se estiver abrindo localmente, o Chrome bloqueia leitura de arquivos locais. Acesse pelo link público do GitHub Pages.<br><br>
+        <em>Erro: ${err.message}</em>
+      </div>`;
+  });
+</script>
+</body>
+</html>
