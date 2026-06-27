@@ -72,7 +72,7 @@ tbody td.cod{font-size:10px;color:#6B7280;font-family:monospace;}
 mark{background:#FEF9C3;border-radius:2px;padding:0 1px;}
 .empty{text-align:center;padding:40px;color:#9CA3AF;font-size:13px;}
 .loading{padding:40px 20px;color:#9CA3AF;text-align:center;}
-.error-box{margin:20px;padding:16px 20px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;color:#991B1B;font-size:13px;line-height:1.6;}
+.error-box{margin:20px;padding:16px 20px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;color:#991B1B;font-size:13px;line-height:1.8;}
 .error-box code{background:#FEE2E2;padding:2px 6px;border-radius:4px;}
 </style>
 </head>
@@ -131,7 +131,7 @@ mark{background:#FEF9C3;border-radius:2px;padding:0 1px;}
 <div id="content"><div class="loading">Carregando dados...</div></div>
 
 <script>
-// ── Próxima sexta ────────────────────────────────────────────────────────────
+// ── Próxima sexta ─────────────────────────────────────────────────────────────
 function proxSexta() {
   var d = new Date();
   var diff = (5 - d.getDay() + 7) % 7;
@@ -142,7 +142,7 @@ function proxSexta() {
 var SEXTA = proxSexta();
 document.getElementById('sextaBadge').textContent = '📦 Próxima sexta: ' + SEXTA;
 
-// ── Fabricação por código ────────────────────────────────────────────────────
+// ── Fabricação por código ─────────────────────────────────────────────────────
 function getFab(cod) {
   var c = (cod || '').trim();
   if (c === '0000-028') return 'Terceiros';
@@ -150,17 +150,16 @@ function getFab(cod) {
   return 'Terceiros';
 }
 
-// ── Converte string BR para número ──────────────────────────────────────────
+// ── Número a partir de string BR ──────────────────────────────────────────────
 function toN(v) {
   if (!v || v === '#N/A' || v.trim() === '') return 0;
   var n = parseFloat(v.replace(/\./g, '').replace(',', '.'));
   return isNaN(n) ? 0 : n;
 }
 
-// ── Estado global ────────────────────────────────────────────────────────────
 var DATA = [];
 
-// ── Render ───────────────────────────────────────────────────────────────────
+// ── Helpers de render ─────────────────────────────────────────────────────────
 function getSt(m) { return m === null ? 'alta' : m < 2 ? 'baixa' : m <= 4 ? 'ideal' : 'alta'; }
 function fmtN(n)  { return (n === null || n === undefined) ? '—' : Math.round(n).toLocaleString('pt-BR'); }
 function fmtC(m)  { return m === null ? '— m' : m.toFixed(1).replace('.', ',') + ' m'; }
@@ -190,9 +189,9 @@ function render() {
     var totEf = spEf + esEf;
     var m     = (r.fc && r.fc > 0) ? totEf / r.fc : null;
     var st    = getSt(m);
-    return { cod: r.cod, fab: r.fab, desc: r.desc,
-             sp: r.sp, entSP: r.entSP, es: r.es, entES: r.entES,
-             tot: r.tot, fc: r.fc, spEf: spEf, esEf: esEf, totEf: totEf, m: m, st: st };
+    return { cod:r.cod, fab:r.fab, desc:r.desc,
+             sp:r.sp, entSP:r.entSP, es:r.es, entES:r.entES,
+             tot:r.tot, fc:r.fc, spEf:spEf, esEf:esEf, totEf:totEf, m:m, st:st };
   }).filter(function(r) {
     if (fFab && r.fab !== fFab) return false;
     if (fSt  && r.st  !== fSt)  return false;
@@ -205,73 +204,66 @@ function render() {
 
   rows.sort(function(a, b) {
     if (q) {
-      var aT = (a.cod.toLowerCase().indexOf(q) === 0 || a.desc.toLowerCase().indexOf(q) === 0) ? 0 : 1;
-      var bT = (b.cod.toLowerCase().indexOf(q) === 0 || b.desc.toLowerCase().indexOf(q) === 0) ? 0 : 1;
+      var aT = (a.cod.toLowerCase().indexOf(q)===0 || a.desc.toLowerCase().indexOf(q)===0) ? 0 : 1;
+      var bT = (b.cod.toLowerCase().indexOf(q)===0 || b.desc.toLowerCase().indexOf(q)===0) ? 0 : 1;
       if (aT !== bT) return aT - bT;
     }
     var sd = sOrd[a.st] - sOrd[b.st];
     if (sd !== 0) return sd;
-    var am = a.m === null ? 999 : a.m;
-    var bm = b.m === null ? 999 : b.m;
-    return am - bm;
+    return (a.m === null ? 999 : a.m) - (b.m === null ? 999 : b.m);
   });
 
   document.getElementById('cnt-baixa').textContent = rows.filter(function(r){return r.st==='baixa';}).length;
   document.getElementById('cnt-ideal').textContent = rows.filter(function(r){return r.st==='ideal';}).length;
   document.getElementById('cnt-alta').textContent  = rows.filter(function(r){return r.st==='alta';}).length;
   document.getElementById('cnt-total').textContent = rows.length;
-  document.getElementById('cnt-sub').textContent   = rows.length < DATA.length ? 'de ' + DATA.length + ' SKUs' : 'monitorados';
+  document.getElementById('cnt-sub').textContent   = rows.length < DATA.length ? 'de '+DATA.length+' SKUs' : 'monitorados';
   document.getElementById('info').innerHTML = rows.length < DATA.length
-    ? '<strong>' + rows.length + '</strong> de ' + DATA.length + ' SKUs exibidos' : '';
+    ? '<strong>'+rows.length+'</strong> de '+DATA.length+' SKUs exibidos' : '';
 
   if (!rows.length) {
     document.getElementById('content').innerHTML = '<div class="empty">Nenhum SKU encontrado.</div>';
     return;
   }
 
-  var sLbl = {
-    baixa: '🔴 Baixa cobertura — menos de 2 meses',
-    ideal: '🟡 Cobertura ideal — 2 a 4 meses',
-    alta:  '🟣 Alta cobertura — acima de 4 meses'
-  };
+  var sLbl = { baixa:'🔴 Baixa cobertura — menos de 2 meses', ideal:'🟡 Cobertura ideal — 2 a 4 meses', alta:'🟣 Alta cobertura — acima de 4 meses' };
   var nCols   = comEnt ? 12 : 9;
   var showSec = !q;
   var lastSt  = null;
 
-  var thEntSP = comEnt ? '<th class="th-esp">Ent. SP<br><small style="font-weight:400">' + SEXTA + '</small></th>' : '';
-  var thEntES = comEnt ? '<th class="th-esg">Ent. ES<br><small style="font-weight:400">' + SEXTA + '</small></th>' : '';
+  var thEntSP = comEnt ? '<th class="th-esp">Ent. SP<br><small style="font-weight:400">'+SEXTA+'</small></th>' : '';
+  var thEntES = comEnt ? '<th class="th-esg">Ent. ES<br><small style="font-weight:400">'+SEXTA+'</small></th>' : '';
   var thTotC  = comEnt ? '<th class="th-totc">Total c/ Ent.</th>' : '';
 
   var html = '<div class="tw"><table><thead><tr>'
     + '<th>Fab.</th><th>Código</th><th>Descrição (SKU)</th>'
     + '<th class="r">Est. SP</th>' + thEntSP
     + '<th class="r">Est. ES</th>' + thEntES
-    + '<th class="r">Total</th>' + thTotC
-    + '<th class="r">Forecast</th>'
-    + '<th class="r">Cob.</th><th>Status</th>'
+    + '<th class="r">Total</th>'   + thTotC
+    + '<th class="r">Forecast</th><th class="r">Cob.</th><th>Status</th>'
     + '</tr></thead><tbody>';
 
   rows.forEach(function(r) {
     if (showSec && r.st !== lastSt) {
-      html += '<tr class="sec"><td colspan="' + nCols + '">' + sLbl[r.st] + '</td></tr>';
+      html += '<tr class="sec"><td colspan="'+nCols+'">'+sLbl[r.st]+'</td></tr>';
       lastSt = r.st;
     }
     var fc      = r.fab === 'Própria' ? 'fp' : 'ft';
     var cCob    = r.st === 'baixa' ? 'ccb' : r.st === 'ideal' ? 'cci' : 'cca';
     var sBdg    = r.st === 'baixa' ? 'bsb' : r.st === 'ideal' ? 'bsi' : 'bsa';
-    var tdEntSP = comEnt ? '<td class="r ent-sp">' + (r.entSP > 0 ? fmtN(r.entSP) : '—') + '</td>' : '';
-    var tdEntES = comEnt ? '<td class="r ent-es">' + (r.entES > 0 ? fmtN(r.entES) : '—') + '</td>' : '';
-    var tdTotC  = comEnt ? '<td class="r tot-c">' + fmtN(r.totEf) + '</td>' : '';
+    var tdEntSP = comEnt ? '<td class="r ent-sp">'+(r.entSP>0?fmtN(r.entSP):'—')+'</td>' : '';
+    var tdEntES = comEnt ? '<td class="r ent-es">'+(r.entES>0?fmtN(r.entES):'—')+'</td>' : '';
+    var tdTotC  = comEnt ? '<td class="r tot-c">'+fmtN(r.totEf)+'</td>' : '';
     html += '<tr>'
-      + '<td><span class="' + fc + '">' + r.fab + '</span></td>'
-      + '<td class="cod">' + hl(r.cod, q) + '</td>'
-      + '<td class="desc">' + hl(r.desc, q) + '</td>'
-      + '<td class="r">' + fmtN(r.sp) + '</td>' + tdEntSP
-      + '<td class="r">' + fmtN(r.es) + '</td>' + tdEntES
-      + '<td class="r" style="font-weight:700">' + fmtN(r.tot) + '</td>' + tdTotC
-      + '<td class="r">' + fmtN(r.fc) + '</td>'
-      + '<td class="r ' + cCob + '">' + fmtC(r.m) + '</td>'
-      + '<td><span class="badge ' + sBdg + '">' + slbl(r.st) + '</span></td>'
+      + '<td><span class="'+fc+'">'+r.fab+'</span></td>'
+      + '<td class="cod">'+hl(r.cod,q)+'</td>'
+      + '<td class="desc">'+hl(r.desc,q)+'</td>'
+      + '<td class="r">'+fmtN(r.sp)+'</td>'+tdEntSP
+      + '<td class="r">'+fmtN(r.es)+'</td>'+tdEntES
+      + '<td class="r" style="font-weight:700">'+fmtN(r.tot)+'</td>'+tdTotC
+      + '<td class="r">'+fmtN(r.fc)+'</td>'
+      + '<td class="r '+cCob+'">'+fmtC(r.m)+'</td>'
+      + '<td><span class="badge '+sBdg+'">'+slbl(r.st)+'</span></td>'
       + '</tr>';
   });
 
@@ -286,49 +278,67 @@ function clearF() {
   render();
 }
 
-// ── Carregar CSV com PapaParse ───────────────────────────────────────────────
+// ── Carregar CSV por ÍNDICE de coluna (imune a problemas de encoding) ─────────
+// Ordem das colunas: 0=Codigo 1=Descricao 2=SP 3=EntSP 4=ES 5=EntES 6=Total 7=Forecast 8=Meses
 Papa.parse('estoque.csv', {
   download: true,
-  header: true,
+  header: false,
+  encoding: 'UTF-8',
   skipEmptyLines: true,
   complete: function(results) {
-    if (!results.data || results.data.length === 0) {
+    var rows = results.data;
+    if (!rows || rows.length < 2) {
       document.getElementById('content').innerHTML =
         '<div class="error-box"><strong>CSV vazio ou sem dados.</strong><br>Verifique o arquivo estoque.csv no repositório.</div>';
       return;
     }
 
+    // Pular linha de cabeçalho (índice 0)
     DATA = [];
-    results.data.forEach(function(r) {
-      var total = (r['Total'] || '').trim();
-      if (!total || total === '#N/A') return;
-      var desc = (r['Descrição'] || '').trim();
-      if (!desc) return;
-      var cod = (r['Codigo'] || '').trim();
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r || r.length < 7) continue;          // linha incompleta
+      var cod   = (r[0] || '').trim();
+      var desc  = (r[1] || '').trim();
+      var sp    = r[2];
+      var entSP = r[3];
+      var es    = r[4];
+      var entES = r[5];
+      var total = (r[6] || '').trim();
+      var fc    = r[7];
+
+      if (!desc || !total || total === '#N/A') continue;
+
       DATA.push({
         cod:   cod,
         fab:   getFab(cod),
         desc:  desc,
-        sp:    toN(r['SP']),
-        entSP: toN(r['Proxima Entrada em SP']),
-        es:    toN(r['VIX ES']),
-        entES: toN(r['Proxima Entrada em ES']),
+        sp:    toN(sp),
+        entSP: toN(entSP),
+        es:    toN(es),
+        entES: toN(entES),
         tot:   toN(total),
-        fc:    toN(r['ForeCast Farma']) || null
+        fc:    toN(fc) || null
       });
-    });
+    }
+
+    if (DATA.length === 0) {
+      document.getElementById('content').innerHTML =
+        '<div class="error-box"><strong>Nenhum dado válido encontrado no CSV.</strong><br>'
+        + 'Verifique se o arquivo <code>estoque.csv</code> tem dados nas colunas corretas.</div>';
+      return;
+    }
 
     document.getElementById('last-updated').textContent =
       'Atualizado em ' + new Date().toLocaleString('pt-BR');
-
     render();
   },
   error: function(err) {
     document.getElementById('content').innerHTML =
       '<div class="error-box"><strong>Não foi possível carregar o arquivo.</strong><br><br>'
-      + 'Verifique se <code>estoque.csv</code> está na mesma pasta que <code>index.html</code> no repositório.<br><br>'
-      + 'Se estiver abrindo localmente, acesse pelo link público do GitHub Pages.<br><br>'
-      + '<em>Erro: ' + err.message + '</em></div>';
+      + 'Verifique se <code>estoque.csv</code> está na mesma pasta que <code>index.html</code>.<br>'
+      + 'Acesse pelo link público do GitHub Pages, não abrindo o arquivo localmente.<br><br>'
+      + '<em>Erro: ' + (err && err.message ? err.message : err) + '</em></div>';
   }
 });
 </script>
