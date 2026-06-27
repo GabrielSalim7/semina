@@ -187,11 +187,12 @@ function render() {
     var spEf  = r.sp  + (comEnt ? r.entSP : 0);
     var esEf  = r.es  + (comEnt ? r.entES : 0);
     var totEf = spEf + esEf;
+    var totReal = r.sp + r.es;
     var m     = (r.fc && r.fc > 0) ? totEf / r.fc : null;
     var st    = getSt(m);
     return { cod:r.cod, fab:r.fab, desc:r.desc,
              sp:r.sp, entSP:r.entSP, es:r.es, entES:r.entES,
-             tot:r.tot, fc:r.fc, spEf:spEf, esEf:esEf, totEf:totEf, m:m, st:st };
+             tot:totReal, fc:r.fc, spEf:spEf, esEf:esEf, totEf:totEf, m:m, st:st };
   }).filter(function(r) {
     if (fFab && r.fab !== fFab) return false;
     if (fSt  && r.st  !== fSt)  return false;
