@@ -15,6 +15,7 @@ body{font-family:Calibri,Arial,sans-serif;background:#f4f4f8;font-size:12px;colo
 .hdr-right{margin-left:auto;text-align:right;}
 .hdr-sub{font-size:11px;color:#C8B8E8;}
 .hdr-upd{font-size:10px;color:#9B85C8;margin-top:2px;}
+.hdr-ref{font-size:10px;color:#A78BFA;margin-top:1px;}
 .cards{display:flex;gap:10px;padding:10px 20px 6px;}
 .card{flex:1;border-radius:8px;padding:10px 14px;border:1px solid;}
 .card-lbl{font-size:10px;font-weight:600;}
@@ -35,7 +36,7 @@ input:checked+.slid{background:#7C3AED;}
 input:checked+.slid:before{transform:translateX(18px);}
 .tog-hint{font-size:10px;color:#6B7280;}
 .tog-hint.on{color:#7C3AED;font-weight:600;}
-.sex-badge{margin-left:auto;background:#EDE8F8;color:#3C3489;border:1px solid #CECBF6;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;}
+.sex-badge{background:#EDE8F8;color:#3C3489;border:1px solid #CECBF6;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600;}
 .filter-bar{display:flex;gap:8px;align-items:center;padding:8px 20px;background:#f9f9fb;border-bottom:1px solid #E5E7EB;flex-wrap:wrap;}
 .flbl{font-size:10px;color:#6B7280;white-space:nowrap;}
 .sw{position:relative;flex:1;min-width:180px;}
@@ -44,8 +45,11 @@ input:checked+.slid:before{transform:translateX(18px);}
 .sico{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9CA3AF;}
 .fsel{padding:6px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;outline:none;cursor:pointer;color:#374151;min-width:130px;font-family:inherit;}
 .fsel:focus{border-color:#7C3AED;}
+.fsel-ent{min-width:160px;}
 .bcl{padding:5px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:11px;background:#fff;cursor:pointer;color:#6B7280;font-family:inherit;}
 .bcl:hover{background:#F3F4F6;}
+.btn-export{padding:5px 12px;border:1px solid #7C3AED;border-radius:6px;font-size:11px;background:#EDE8F8;cursor:pointer;color:#5B21B6;font-family:inherit;font-weight:600;margin-left:auto;}
+.btn-export:hover{background:#DDD6FE;}
 .rinfo{font-size:10px;color:#6B7280;padding:3px 20px 0;}
 .rinfo strong{color:#3C3489;}
 .tw{padding:4px 20px 20px;overflow-x:auto;}
@@ -69,6 +73,7 @@ tbody td.cod{font-size:10px;color:#6B7280;font-family:monospace;}
 .ccb{color:#A32D2D;font-weight:700;}.cci{color:#854F0B;font-weight:700;}.cca{color:#3C3489;font-weight:700;}
 .sec td{background:#F3F0FA;font-size:9px;font-weight:700;color:#3C3489;letter-spacing:.4px;text-transform:uppercase;padding:4px 8px;border-top:2px solid #CECBF6;}
 .ent-sp{color:#7C3AED;font-weight:700;}.ent-es{color:#059669;font-weight:700;}.tot-c{color:#7C3AED;font-weight:700;}
+.ent-icon{font-size:10px;margin-left:3px;opacity:.7;}
 mark{background:#FEF9C3;border-radius:2px;padding:0 1px;}
 .empty{text-align:center;padding:40px;color:#9CA3AF;font-size:13px;}
 .loading{padding:40px 20px;color:#9CA3AF;text-align:center;}
@@ -85,6 +90,7 @@ mark{background:#FEF9C3;border-radius:2px;padding:0 1px;}
   <div class="hdr-right">
     <div class="hdr-sub">Estoque atual vs Forecast</div>
     <div class="hdr-upd" id="last-updated"></div>
+    <div class="hdr-ref" id="data-ref"></div>
   </div>
 </div>
 
@@ -124,7 +130,13 @@ mark{background:#FEF9C3;border-radius:2px;padding:0 1px;}
     <option value="ideal">Cobertura Ideal</option>
     <option value="alta">Alta Cobertura</option>
   </select>
+  <select class="fsel fsel-ent" id="fEnt" onchange="render()">
+    <option value="">Entrada prevista — todas</option>
+    <option value="sim">Com entrada prevista</option>
+    <option value="nao">Sem entrada prevista</option>
+  </select>
   <button class="bcl" onclick="clearF()">✕ Limpar</button>
+  <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
 </div>
 
 <div class="rinfo" id="info"></div>
@@ -158,8 +170,9 @@ function toN(v) {
 }
 
 var DATA = [];
+var DATA_REF = '';
 
-// ── Helpers de render ─────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function getSt(m) { return m === null ? 'alta' : m < 2 ? 'baixa' : m <= 4 ? 'ideal' : 'alta'; }
 function fmtN(n)  { return (n === null || n === undefined) ? '—' : Math.round(n).toLocaleString('pt-BR'); }
 function fmtC(m)  { return m === null ? '— m' : m.toFixed(1).replace('.', ',') + ' m'; }
@@ -169,33 +182,60 @@ function hl(t, q) {
   try { return t.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>'); }
   catch(e) { return t; }
 }
+function hasEntrada(r) { return r.entSP > 0 || r.entES > 0; }
 
-function render() {
+// ── Exportar CSV ──────────────────────────────────────────────────────────────
+function exportCSV() {
+  var comEnt = document.getElementById('togEnt').checked;
+  var rows   = getFilteredRows();
+
+  var headers = ['Fab.','Codigo','Descricao','Est. SP','Est. ES','Total'];
+  if (comEnt) headers = headers.concat(['Ent. SP ('+SEXTA+')','Ent. ES ('+SEXTA+')','Total c/ Entrada']);
+  headers = headers.concat(['Forecast','Cobertura','Status']);
+
+  var lines = [headers.join(';')];
+  rows.forEach(function(r) {
+    var cols = [r.fab, r.cod, '"'+r.desc+'"', r.sp, r.es, r.tot];
+    if (comEnt) cols = cols.concat([r.entSP, r.entES, r.totEf]);
+    cols = cols.concat([r.fc || '', fmtC(r.m), slbl(r.st)]);
+    lines.push(cols.join(';'));
+  });
+
+  var bom    = '\uFEFF';
+  var blob   = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url    = URL.createObjectURL(blob);
+  var a      = document.createElement('a');
+  var hoje   = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  a.href     = url;
+  a.download = 'estoque_semina_' + hoje + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Gera linhas filtradas (compartilhado por render e exportCSV) ──────────────
+function getFilteredRows() {
   var q      = document.getElementById('q').value.trim().toLowerCase();
   var fFab   = document.getElementById('fFab').value;
   var fSt    = document.getElementById('fSt').value;
+  var fEnt   = document.getElementById('fEnt').value;
   var comEnt = document.getElementById('togEnt').checked;
-
-  document.getElementById('togHint').textContent = comEnt
-    ? '✅ Estoque atual + entradas previstas na sexta'
-    : 'Exibindo apenas estoque atual';
-  document.getElementById('togHint').className = 'tog-hint' + (comEnt ? ' on' : '');
-
-  var sOrd = { baixa: 0, ideal: 1, alta: 2 };
+  var sOrd   = { baixa: 0, ideal: 1, alta: 2 };
 
   var rows = DATA.map(function(r) {
-    var spEf  = r.sp  + (comEnt ? r.entSP : 0);
-    var esEf  = r.es  + (comEnt ? r.entES : 0);
-    var totEf = spEf + esEf;
-    var totReal = r.sp + r.es;
-    var m     = (r.fc && r.fc > 0) ? totEf / r.fc : null;
-    var st    = getSt(m);
+    var spEf   = r.sp + (comEnt ? r.entSP : 0);
+    var esEf   = r.es + (comEnt ? r.entES : 0);
+    var totEf  = spEf + esEf;
+    var totReal= r.sp + r.es;
+    var m      = (r.fc && r.fc > 0) ? totEf / r.fc : null;
+    var st     = getSt(m);
     return { cod:r.cod, fab:r.fab, desc:r.desc,
              sp:r.sp, entSP:r.entSP, es:r.es, entES:r.entES,
              tot:totReal, fc:r.fc, spEf:spEf, esEf:esEf, totEf:totEf, m:m, st:st };
   }).filter(function(r) {
     if (fFab && r.fab !== fFab) return false;
     if (fSt  && r.st  !== fSt)  return false;
+    if (fEnt === 'sim' && !hasEntrada(r)) return false;
+    if (fEnt === 'nao' &&  hasEntrada(r)) return false;
     if (q) {
       var hay = (r.cod + ' ' + r.desc + ' ' + r.fab).toLowerCase();
       if (hay.indexOf(q) === -1) return false;
@@ -213,6 +253,21 @@ function render() {
     if (sd !== 0) return sd;
     return (a.m === null ? 999 : a.m) - (b.m === null ? 999 : b.m);
   });
+
+  return rows;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  var q      = document.getElementById('q').value.trim().toLowerCase();
+  var comEnt = document.getElementById('togEnt').checked;
+
+  document.getElementById('togHint').textContent = comEnt
+    ? '✅ Estoque atual + entradas previstas na sexta'
+    : 'Exibindo apenas estoque atual';
+  document.getElementById('togHint').className = 'tog-hint' + (comEnt ? ' on' : '');
+
+  var rows = getFilteredRows();
 
   document.getElementById('cnt-baixa').textContent = rows.filter(function(r){return r.st==='baixa';}).length;
   document.getElementById('cnt-ideal').textContent = rows.filter(function(r){return r.st==='ideal';}).length;
@@ -255,10 +310,14 @@ function render() {
     var tdEntSP = comEnt ? '<td class="r ent-sp">'+(r.entSP>0?fmtN(r.entSP):'—')+'</td>' : '';
     var tdEntES = comEnt ? '<td class="r ent-es">'+(r.entES>0?fmtN(r.entES):'—')+'</td>' : '';
     var tdTotC  = comEnt ? '<td class="r tot-c">'+fmtN(r.totEf)+'</td>' : '';
+
+    // Ícone 📦 na descrição se tem entrada prevista (toggle desligado)
+    var entIcon = (!comEnt && hasEntrada(r)) ? ' <span class="ent-icon" title="Tem entrada prevista na sexta">📦</span>' : '';
+
     html += '<tr>'
       + '<td><span class="'+fc+'">'+r.fab+'</span></td>'
       + '<td class="cod">'+hl(r.cod,q)+'</td>'
-      + '<td class="desc">'+hl(r.desc,q)+'</td>'
+      + '<td class="desc">'+hl(r.desc,q)+entIcon+'</td>'
       + '<td class="r">'+fmtN(r.sp)+'</td>'+tdEntSP
       + '<td class="r">'+fmtN(r.es)+'</td>'+tdEntES
       + '<td class="r" style="font-weight:700">'+fmtN(r.tot)+'</td>'+tdTotC
@@ -276,11 +335,12 @@ function clearF() {
   document.getElementById('q').value = '';
   document.getElementById('fFab').value = '';
   document.getElementById('fSt').value = '';
+  document.getElementById('fEnt').value = '';
   render();
 }
 
-// ── Carregar CSV por ÍNDICE de coluna (imune a problemas de encoding) ─────────
-// Ordem das colunas: 0=Codigo 1=Descricao 2=SP 3=EntSP 4=ES 5=EntES 6=Total 7=Forecast 8=Meses
+// ── Carregar CSV por índice (imune a encoding) ────────────────────────────────
+// Colunas: 0=Codigo 1=Desc 2=SP 3=EntSP 4=ES 5=EntES 6=Total 7=Forecast 8=Meses 9=Data(opcional)
 Papa.parse('estoque.csv', {
   download: true,
   header: false,
@@ -294,32 +354,34 @@ Papa.parse('estoque.csv', {
       return;
     }
 
-    // Pular linha de cabeçalho (índice 0)
+    // Verificar se existe coluna de data de referência (coluna 9)
+    var header = rows[0];
+    if (header.length > 9 && header[9]) {
+      // Pegar valor da primeira linha de dados como data de referência
+      if (rows.length > 1 && rows[1][9]) {
+        DATA_REF = rows[1][9].trim();
+        document.getElementById('data-ref').textContent = '📅 Dados de: ' + DATA_REF;
+      }
+    }
+
     DATA = [];
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i];
-      if (!r || r.length < 7) continue;          // linha incompleta
+      if (!r || r.length < 7) continue;
       var cod   = (r[0] || '').trim();
       var desc  = (r[1] || '').trim();
-      var sp    = r[2];
-      var entSP = r[3];
-      var es    = r[4];
-      var entES = r[5];
       var total = (r[6] || '').trim();
-      var fc    = r[7];
-
       if (!desc || !total || total === '#N/A') continue;
-
       DATA.push({
         cod:   cod,
         fab:   getFab(cod),
         desc:  desc,
-        sp:    toN(sp),
-        entSP: toN(entSP),
-        es:    toN(es),
-        entES: toN(entES),
+        sp:    toN(r[2]),
+        entSP: toN(r[3]),
+        es:    toN(r[4]),
+        entES: toN(r[5]),
         tot:   toN(total),
-        fc:    toN(fc) || null
+        fc:    toN(r[7]) || null
       });
     }
 
@@ -331,7 +393,7 @@ Papa.parse('estoque.csv', {
     }
 
     document.getElementById('last-updated').textContent =
-      'Atualizado em ' + new Date().toLocaleString('pt-BR');
+      'Carregado em ' + new Date().toLocaleString('pt-BR');
     render();
   },
   error: function(err) {
@@ -339,7 +401,7 @@ Papa.parse('estoque.csv', {
       '<div class="error-box"><strong>Não foi possível carregar o arquivo.</strong><br><br>'
       + 'Verifique se <code>estoque.csv</code> está na mesma pasta que <code>index.html</code>.<br>'
       + 'Acesse pelo link público do GitHub Pages, não abrindo o arquivo localmente.<br><br>'
-      + '<em>Erro: ' + (err && err.message ? err.message : err) + '</em></div>';
+      + '<em>Erro: ' + (err && err.message ? err.message : String(err)) + '</em></div>';
   }
 });
 </script>
